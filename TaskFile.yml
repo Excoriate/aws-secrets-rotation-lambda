@@ -1,0 +1,68 @@
+---
+version: '3'
+
+dotenv: ['.env']
+
+env:
+  MODULE: '{{.TG_MODULE}}'
+
+
+includes:
+    common:
+        taskfile: ./DevEx/taskfile/Taskfile.common.yml
+
+    terragrunt:
+      taskfile: ./DevEx/taskfile/Taskfile.terragrunt.yml
+      dir: ./infra/terraform
+
+tasks:
+  #-----------------------------------------------------------------------------------------
+  # GENERIC TASKS
+  #-----------------------------------------------------------------------------------------
+    default:
+        cmds:
+            - task: common:default
+
+    pre-commit-init:
+        desc: Initialize and install required hooks
+        cmds:
+            - task: common:hooks-install
+
+    pre-commit:
+        desc: Run all the pre-configured pre-commit hooks.
+        cmds:
+            - task: common:hooks
+
+  #-----------------------------------------------------------------------------------------
+  # SPECIFICS TASKS
+  #-----------------------------------------------------------------------------------------
+    cli:
+        desc: Run the CLI
+        cmds:
+            - |
+              go mod tidy
+              if [ -f "stiletto" ]; then rm stiletto; fi
+              go build -o stiletto
+            - ./stiletto {{.CLI_ARGS}}
+
+    snapshot:
+        cmds:
+            - goreleaser check
+            - goreleaser release --snapshot --rm-dist --skip-publish
+
+    release:
+        cmds:
+            - goreleaser check
+            - export GITHUB_TOKEN=${GITHUB_TOKEN} && goreleaser release --rm-dist
+
+    tg-init:
+      desc: Run Terragrunt Init on selected module
+      cmds:
+        - task: terragrunt:init
+          vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+
+    tg-plan:
+      desc: Run Terragrunt Plan on selected module
+      cmds:
+        - task: terragrunt:plan
+          vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
