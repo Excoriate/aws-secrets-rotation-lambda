@@ -51,4 +51,7 @@ terraform.tfstate.backup
 *.tar.gz
 *.tgz
 
-
+# Generated binaries
+secrets-manager-rotator-lambda
+pipeline-dagger
+output/**

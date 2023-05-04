@@ -1,10 +1,10 @@
 ---
 version: '3'
 
-dotenv: ['.env']
+dotenv: [.env]
 
 env:
-  MODULE: '{{.TG_MODULE}}'
+    MODULE: '{{.TG_MODULE}}'
 
 
 includes:
@@ -12,8 +12,8 @@ includes:
         taskfile: ./DevEx/taskfile/Taskfile.common.yml
 
     terragrunt:
-      taskfile: ./DevEx/taskfile/Taskfile.terragrunt.yml
-      dir: ./infra/terraform
+        taskfile: ./DevEx/taskfile/Taskfile.terragrunt.yml
+        dir: ./infra/terraform
 
 tasks:
   #-----------------------------------------------------------------------------------------
@@ -36,14 +36,16 @@ tasks:
   #-----------------------------------------------------------------------------------------
   # SPECIFICS TASKS
   #-----------------------------------------------------------------------------------------
-    cli:
-        desc: Run the CLI
+    compile-go:
+        desc: Compile the lambda binary
+        dir: src/lambda/secrets-manager-rotator-go
         cmds:
             - |
               go mod tidy
-              if [ -f "stiletto" ]; then rm stiletto; fi
-              go build -o stiletto
-            - ./stiletto {{.CLI_ARGS}}
+              if [ -f "secrets-manager-rotator-lambda" ]; then rm secrets-manager-rotator-lambda; fi
+              go build -o secrets-manager-rotator-lambda
+              if [ -f "../../../secrets-manager-rotator-lambda" ]; then rm ../../../secrets-manager-rotator-lambda; fi
+              mv secrets-manager-rotator-lambda ../../../secrets-manager-rotator-lambda
 
     snapshot:
         cmds:
@@ -56,13 +58,42 @@ tasks:
             - export GITHUB_TOKEN=${GITHUB_TOKEN} && goreleaser release --rm-dist
 
     tg-init:
-      desc: Run Terragrunt Init on selected module
-      cmds:
-        - task: terragrunt:init
-          vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+        desc: Run Terragrunt Init on selected module
+        cmds:
+            - task: terragrunt:init
+              vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
 
     tg-plan:
-      desc: Run Terragrunt Plan on selected module
-      cmds:
-        - task: terragrunt:plan
-          vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+        desc: Run Terragrunt Plan on selected module
+        cmds:
+            - task: terragrunt:plan
+              vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+
+    tg-apply:
+        desc: Run Terragrunt Apply on selected module
+        cmds:
+            - task: terragrunt:apply
+              vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+
+    tg-destroy:
+        desc: Run Terragrunt Destroy on selected module
+        cmds:
+            - task: terragrunt:destroy
+              vars: {TG_WORKING_DIR: '{{.TG_MODULE}}'}
+
+    pipeline-dagger-compile:
+        desc: Compile the dagger pipeline, wrapping the CLI through TaskFile
+        dir: pipeline/dagger
+        cmds:
+            - |
+              go mod tidy
+              if [ -f "pipeline-dagger" ]; then rm pipeline-dagger; fi
+              go build -o pipeline-dagger
+              if [ -f "../../pipeline-dagger" ]; then rm ../../pipeline-dagger; fi
+              mv pipeline-dagger ../../pipeline-dagger
+
+    pipeline-dagger-run:
+        desc: Run the dagger pipeline, wrapping the CLI through TaskFile
+        deps: [pipeline-dagger-compile]
+        cmds:
+            - ./pipeline-dagger {{.CLI_ARGS}}

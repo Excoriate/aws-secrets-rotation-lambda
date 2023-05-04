@@ -1,6 +1,6 @@
 bucket_config = [
   {
-    name = "lambda-deployment-bucket-dev-1"
+    name = "lambda-deployment-bucket-demo-dev-1"
   }
 ]
 
