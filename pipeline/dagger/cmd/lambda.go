@@ -9,6 +9,7 @@ import (
 
 var (
 	generateZip bool
+	compile     bool
 	lambdaSrc   string
 )
 
@@ -20,8 +21,8 @@ deployable artifact, among others`,
 rotator lambda generate-zip
   `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if generateZip {
-			err := tasks.GenerateZip()
+		if compile {
+			err := tasks.CompileLambda()
 			if err != nil {
 				os.Exit(1)
 			}
@@ -33,10 +34,12 @@ rotator lambda generate-zip
 
 func addFlags() {
 	LambdaCMD.Flags().BoolVarP(&generateZip, "generate-zip", "z", false, "Generate a zip file with the lambda code.")
+	LambdaCMD.Flags().BoolVarP(&compile, "compile", "c", false, "Compile the lambda source code.")
 	LambdaCMD.Flags().StringVarP(&lambdaSrc, "lambda-src", "s", ".",
 		"Lambda source code directory. If it's not set, it'll use the current directory.")
 	_ = viper.BindPFlag("generate-zip", LambdaCMD.Flags().Lookup("generate-zip"))
 	_ = viper.BindPFlag("lambda-src", LambdaCMD.Flags().Lookup("lambda-src"))
+	_ = viper.BindPFlag("compile", LambdaCMD.Flags().Lookup("compile"))
 }
 
 func init() {
