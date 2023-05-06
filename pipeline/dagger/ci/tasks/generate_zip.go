@@ -9,10 +9,10 @@ import (
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/tui"
 )
 
-func GenerateZip() error {
+func PackageZip() error {
 	ux := tui.NewTitle()
 	msg := tui.NewTUIMessage()
-	ux.ShowSubTitle("lambda:", "Package")
+	ux.ShowSubTitle("lambda:", "PackageZIP")
 
 	// Getting working directories.
 	dirs, err := config.GetDirConfig()

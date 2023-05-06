@@ -26,8 +26,9 @@ func (c *Compile) Zip(sourceFile, targetFile, targetDir string) (*os.File, strin
 		return nil, "", erroer.NewTaskError("Source file does not exist", err)
 	}
 
-	// If the target dir does not exist, it'll be created. If exist, it'll be deleted,
-	//and re-created.
+	targetDir = fmt.Sprintf("%s/linux/amd64",
+		targetDir) // FIXME: Change this logic when multiple-platforms get supported.
+
 	if err := common.DirExist(targetDir); err != nil {
 		if err := os.MkdirAll(targetDir, 0755); err != nil {
 			return nil, "", erroer.NewTaskError("Failed to create target directory", err)
