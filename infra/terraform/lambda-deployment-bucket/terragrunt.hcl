@@ -50,4 +50,9 @@ inputs = {
   tags = merge(include.metadata.locals.tags, {
     "Name" = "s3-deployment-bucket"
   })
+  bucket_config = [
+    {
+      name = format("%s-secrets-manager-rotator-%s-deployment", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+    }
+  ]
 }

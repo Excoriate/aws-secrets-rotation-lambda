@@ -13,6 +13,7 @@ const LambdaName = "secrets-manager-rotator-lambda"
 const PackageZipName = "secrets-manager-rotator-lambda.zip"
 const OutputBinaryDir = "output/lambda-bin"
 const OutputZipDir = "output/lambda-zip"
+const infraBaseDir = "infra/terraform"
 
 var (
 	CurrentDir, _      = os.Getwd()
@@ -20,9 +21,12 @@ var (
 )
 
 type DirConfig struct {
-	CurrentDir         string
-	GitRepoDir         string
-	GitRelativeRepoDir string
+	CurrentDir             string
+	GitRepoDir             string
+	InfraDirBase           string
+	GitRelativeRepoDir     string
+	InfraDirModuleBucket   string
+	InfraDirModuleFunction string
 }
 
 func GetBinaryExportPath() string {
@@ -38,14 +42,39 @@ func GetZipExportPath() string {
 	return fmt.Sprintf("%s/%s", gitRepoDirNormalised, OutputZipDir)
 }
 
+func GetInfraBaseDirPath() string {
+	dirs, _ := GetDirConfig()
+	gitRepoDirNormalised := strings.TrimSuffix(dirs.GitRepoDir, "/")
+	return fmt.Sprintf("%s/%s", gitRepoDirNormalised, infraBaseDir)
+}
+
+func GetInfraWorkDirPath(module string) string {
+	var path string
+
+	if module == "bucket" {
+		path = fmt.Sprintf("%s/%s", infraBaseDir, "lambda-deployment-bucket")
+	}
+
+	if module == "function" {
+		path = fmt.Sprintf("%s/%s", infraBaseDir, "lambda-function")
+	}
+
+	return path
+}
+
 func GetDirConfig() (DirConfig, error) {
 	cfg := Cfg{}
 	isDebugModeEnabled, _ := cfg.GetFromViperBool("debug")
+	infraDirModuleBucket := fmt.Sprintf("%s/%s", infraBaseDir, "lambda-deployment-bucket")
+	infraDirModuleFunction := fmt.Sprintf("%s/%s", infraBaseDir, "lambda-function")
 
 	if isDebugModeEnabled {
 		return DirConfig{
-			CurrentDir: CurrentDir,
-			GitRepoDir: GitRelativeRepoDir,
+			CurrentDir:             CurrentDir,
+			GitRepoDir:             GitRelativeRepoDir,
+			InfraDirBase:           infraBaseDir,
+			InfraDirModuleBucket:   infraDirModuleBucket,
+			InfraDirModuleFunction: infraDirModuleFunction,
 		}, nil
 	}
 
@@ -56,8 +85,11 @@ func GetDirConfig() (DirConfig, error) {
 			"failed to get the root of the Git repository", err)
 	}
 	return DirConfig{
-		CurrentDir: CurrentDir,
-		GitRepoDir: gitRootDir,
+		CurrentDir:             CurrentDir,
+		GitRepoDir:             gitRootDir,
+		InfraDirBase:           infraBaseDir,
+		InfraDirModuleBucket:   infraDirModuleBucket,
+		InfraDirModuleFunction: infraDirModuleFunction,
 	}, nil
 }
 

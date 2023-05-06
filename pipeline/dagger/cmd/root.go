@@ -75,9 +75,14 @@ func initConfig() {
 	}
 }
 
+func AddSubCommands() {
+	rootCmd.AddCommand(LambdaCMD)
+	rootCmd.AddCommand(InfraCMD)
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	addPersistentFlags()
 
-	rootCmd.AddCommand(LambdaCMD)
+	AddSubCommands()
 }
