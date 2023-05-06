@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/errors"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/erroer"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +10,7 @@ import (
 )
 
 const LambdaName = "secrets-manager-rotator-lambda"
+const PackageZipName = "secrets-manager-rotator-lambda.zip"
 const OutputBinaryDir = "output/lambda-bin"
 const OutputZipDir = "output/lambda-zip"
 
@@ -33,7 +34,8 @@ func GetBinaryExportPath() string {
 
 func GetZipExportPath() string {
 	dirs, _ := GetDirConfig()
-	return fmt.Sprintf("%s/%s", dirs.GitRepoDir, OutputZipDir)
+	gitRepoDirNormalised := strings.TrimSuffix(dirs.GitRepoDir, "/")
+	return fmt.Sprintf("%s/%s", gitRepoDirNormalised, OutputZipDir)
 }
 
 func GetDirConfig() (DirConfig, error) {
@@ -50,7 +52,7 @@ func GetDirConfig() (DirConfig, error) {
 	gitRootDir, err := GetGitRootDir()
 
 	if err != nil {
-		return DirConfig{}, errors.NewPipelineConfigurationError(
+		return DirConfig{}, erroer.NewPipelineConfigurationError(
 			"failed to get the root of the Git repository", err)
 	}
 	return DirConfig{

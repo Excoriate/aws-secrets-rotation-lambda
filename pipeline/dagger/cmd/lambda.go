@@ -27,6 +27,13 @@ rotator lambda generate-zip
 				os.Exit(1)
 			}
 		}
+
+		if generateZip {
+			err := tasks.GenerateZip()
+			if err != nil {
+				os.Exit(1)
+			}
+		}
 		//_ = cmd.Help()
 		os.Exit(0)
 	},

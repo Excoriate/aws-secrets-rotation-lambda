@@ -4,13 +4,16 @@ import (
 	"context"
 	"dagger.io/dagger"
 	"fmt"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/common"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/config"
-	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/errors"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/erroer"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/tui"
+	"os"
 )
 
 type Compiler interface {
-	Compile(srcDir, outputDIr string) (*dagger.Directory, error)
+	Compile(srcDir, outputDIr string) (*dagger.Directory, string, error)
+	Zip(sourceFile, targetFile, targetDir string) (*os.File, string, error)
 }
 
 type Compile struct {
@@ -18,12 +21,41 @@ type Compile struct {
 	Ctx    context.Context
 }
 
-func (c *Compile) Compile(srcDir, outputDir string) (*dagger.Directory, error) {
+func (c *Compile) Zip(sourceFile, targetFile, targetDir string) (*os.File, string, error) {
+	if err := common.FileExist(sourceFile); err != nil {
+		return nil, "", erroer.NewTaskError("Source file does not exist", err)
+	}
+
+	// If the target dir does not exist, it'll be created. If exist, it'll be deleted,
+	//and re-created.
+	if err := common.DirExist(targetDir); err != nil {
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return nil, "", erroer.NewTaskError("Failed to create target directory", err)
+		}
+	} else {
+		if err := os.RemoveAll(targetDir); err != nil {
+			return nil, "", erroer.NewTaskError("Failed to remove target directory", err)
+		}
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return nil, "", erroer.NewTaskError("Failed to create target directory", err)
+		}
+	}
+
+	zipFile, err := common.CreateZipFile(sourceFile, targetFile, targetDir)
+	if err != nil {
+		return nil, "", erroer.NewTaskError("Failed to create zip file", err)
+	}
+
+	return zipFile, fmt.Sprintf("%s/%s", targetDir, targetFile), nil
+}
+
+func (c *Compile) Compile(srcDir, outputDir string) (*dagger.Directory, string, error) {
 	workDir := c.Client.Host().Directory(srcDir)
 	msg := tui.NewTUIMessage()
 
 	// Output dir
 	binaryOutDir := c.Client.Directory()
+	var binaryExportedPath string
 
 	// Compiling the binary.
 	platforms := []dagger.Platform{"linux/amd64"}
@@ -50,14 +82,16 @@ func (c *Compile) Compile(srcDir, outputDir string) (*dagger.Directory, error) {
 			outputPath,
 			builder.File(fmt.Sprintf("/src/%s", config.LambdaName)),
 		)
+
+		binaryExportedPath = outputPath
 	}
 
 	_, err := binaryOutDir.Export(c.Ctx, config.GetBinaryExportPath())
 	if err != nil {
-		return nil, errors.NewTaskError("Failed to export the binary", err)
+		return nil, "", erroer.NewTaskError("Failed to export the binary", err)
 	}
 
-	return binaryOutDir, nil
+	return binaryOutDir, binaryExportedPath, nil
 }
 
 func NewCompiler(c *dagger.Client, ctx context.Context) Compiler {

@@ -1,7 +1,10 @@
 package common
 
 import (
+	"archive/zip"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -73,6 +76,14 @@ func DirIsValid(dir string) error {
 	return nil
 }
 
+func FileExist(filePath string) error {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("file %s does not exist", filePath)
+	}
+
+	return nil
+}
+
 func GetDirAbsolute(dir string) (string, error) {
 	absolutePath, err := filepath.Abs(dir)
 	if err != nil {
@@ -80,4 +91,63 @@ func GetDirAbsolute(dir string) (string, error) {
 	}
 
 	return absolutePath, nil
+}
+
+func CreateZipFile(sourceFile, targetFile, targetDir string) (*os.File, error) {
+	if sourceFile == "" {
+		return nil, errors.New("source file cannot be an empty string")
+	}
+
+	if targetFile == "" {
+		return nil, errors.New("target file cannot be an empty string")
+	}
+
+	if _, err := os.Stat(sourceFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("source file %s does not exist", sourceFile)
+	}
+
+	if targetDir == "" {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get current directory: %s", err.Error())
+		}
+		targetDir = currentDir
+	}
+
+	zipFile, err := os.Create(filepath.Join(targetDir, targetFile))
+	if err != nil {
+		return nil, fmt.Errorf("error creating zip file %s: %s", targetFile, err.Error())
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	inputFile, err := os.Open(sourceFile)
+	if err != nil {
+		return nil, fmt.Errorf("error opening source file %s: %s", sourceFile, err.Error())
+	}
+	defer inputFile.Close()
+
+	fileInfo, err := inputFile.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("error getting file info for %s: %s", sourceFile, err.Error())
+	}
+
+	header, err := zip.FileInfoHeader(fileInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error creating zip header for %s: %s", sourceFile, err.Error())
+	}
+	header.Name = sourceFile
+
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return nil, fmt.Errorf("error creating zip writer for %s: %s", sourceFile, err.Error())
+	}
+
+	if _, err := io.Copy(writer, inputFile); err != nil {
+		return nil, fmt.Errorf("error writing to zip file %s: %s", sourceFile, err.Error())
+	}
+
+	return zipFile, nil
 }

@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/common"
-	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/errors"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/erroer"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -35,7 +35,7 @@ func (c *Cfg) GetFromViper(key string) (CfgValue, error) {
 	}
 
 	if keyToSeek == "" {
-		return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config value (from viper) for key: %s. It's passed empty", keyToSeek),
 			nil)
 	}
@@ -45,7 +45,7 @@ func (c *Cfg) GetFromViper(key string) (CfgValue, error) {
 	value := viper.Get(keyNormalised)
 
 	if value == nil {
-		return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config value (from viper) for key: %s. It is not found.",
 			keyNormalised), nil)
 	}
@@ -54,7 +54,7 @@ func (c *Cfg) GetFromViper(key string) (CfgValue, error) {
 		return CfgValue{Key: keyNormalised, Value: value}, nil
 	}
 
-	return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
+	return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
 		"from viper) value for key: %s. It is not found.", keyNormalised), nil)
 }
 
@@ -68,7 +68,7 @@ func (c *Cfg) GetFromViperBool(key string) (bool, error) {
 	}
 
 	if keyToSeek == "" {
-		return false, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return false, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config value (from viper) for key: %s. It's passed empty", keyToSeek),
 			nil)
 	}
@@ -78,7 +78,7 @@ func (c *Cfg) GetFromViperBool(key string) (bool, error) {
 	value := viper.GetBool(keyNormalised)
 
 	if value == false {
-		return false, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return false, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config value (from viper) for key: %s. It is not found.",
 			keyNormalised), nil)
 	}
@@ -96,7 +96,7 @@ func (c *Cfg) GetFromEnvVars(key string) (CfgValue, error) {
 	}
 
 	if keyToSeek == "" {
-		return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config (from env vars) value for key: %s. It's passed empty",
 			keyToSeek), nil)
 	}
@@ -108,7 +108,7 @@ func (c *Cfg) GetFromEnvVars(key string) (CfgValue, error) {
 		return CfgValue{Key: keyNormalised, Value: value}, nil
 	}
 
-	return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
+	return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
 		"from env vars) value for key: %s. It is not found.", keyNormalised), nil)
 }
 
@@ -122,7 +122,7 @@ func (c *Cfg) GetFromAny(key string) (CfgValue, error) {
 	}
 
 	if keyToSeek == "" {
-		return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"Failed to get config (from any) value for key: %s. It's passed empty", keyToSeek), nil)
 	}
 
@@ -139,7 +139,7 @@ func (c *Cfg) GetFromAny(key string) (CfgValue, error) {
 		return CfgValue{Key: keyNormalised, Value: value}, nil
 	}
 
-	return CfgValue{}, errors.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
+	return CfgValue{}, erroer.NewPipelineConfigurationError(fmt.Sprintf("Failed to get config ("+
 		"from any) value for key: %s. It is not found.", keyNormalised), nil)
 }
 

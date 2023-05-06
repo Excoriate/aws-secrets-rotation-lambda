@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/common"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/config"
-	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/errors"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/erroer"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/tui"
 )
 
@@ -17,13 +17,13 @@ func IsLambdaSRCDirValid(srcPath string, dirs config.DirConfig) (string, error) 
 	}
 
 	if err := common.DirIsValid(srcPath); err != nil {
-		return "", errors.NewPipelineConfigurationError(fmt.Sprintf(
+		return "", erroer.NewPipelineConfigurationError(fmt.Sprintf(
 			"The lambda source code directory is not a valid directory"+
 				": %s. Current directory: %s", srcPath, dirs.CurrentDir), err)
 	}
 
 	if err := common.DirIsNotEmpty(srcPath); err != nil {
-		return "", errors.NewPipelineConfigurationError(fmt.Sprintf("The lambda source code directory is empty: %s", srcPath), err)
+		return "", erroer.NewPipelineConfigurationError(fmt.Sprintf("The lambda source code directory is empty: %s", srcPath), err)
 	}
 
 	absDirPath, _ := common.GetDirAbsolute(srcPath)
