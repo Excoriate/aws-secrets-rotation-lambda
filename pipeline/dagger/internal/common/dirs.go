@@ -138,7 +138,7 @@ func CreateZipFile(sourceFile, targetFile, targetDir string) (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating zip header for %s: %s", sourceFile, err.Error())
 	}
-	header.Name = sourceFile
+	header.Name = filepath.Base(sourceFile) // This line is changed
 
 	writer, err := zipWriter.CreateHeader(header)
 	if err != nil {
