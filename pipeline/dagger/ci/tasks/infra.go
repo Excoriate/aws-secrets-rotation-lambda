@@ -7,6 +7,7 @@ import (
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/common"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/config"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/daggerio"
+	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/erroer"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/tui"
 )
 
@@ -22,6 +23,7 @@ func SetInfraConfigInContainer(c *dagger.Container) (*dagger.Container, error) {
 		"TF_VAR_aws_region",
 		"TF_VAR_environment",
 		"TF_VAR_rotator_lambda_name",
+		"TF_VAR_secret_name",
 		"TF_VERSION",
 		"TG_VERSION",
 	}
@@ -51,23 +53,55 @@ func SetInfraConfigInContainer(c *dagger.Container) (*dagger.Container, error) {
 	return c, nil
 }
 
+func IsComponentAllowed() (string, error) {
+	components := []string{"lambda", "bucket", "secret", "data"}
+	cfg := config.Cfg{}
+	componentCfg, _ := cfg.GetFromViper("component")
+
+	for _, c := range components {
+		if c == componentCfg.Value.(string) {
+			return componentCfg.Value.(string), nil
+		}
+	}
+
+	return "", erroer.NewPipelineConfigurationError("Component is not allowed, "+
+		"must be of type: lambda, bucket, secret or data", nil)
+}
+
+func IsAllOptionEnabled() bool {
+	cfg := config.Cfg{}
+	allCfg, _ := cfg.GetFromViperBool("all")
+
+	if allCfg {
+		return true
+	}
+
+	return false
+}
+
 func InfraPlan() error {
 	ux := tui.NewTitle()
 	msg := tui.NewTUIMessage()
 	ctx := context.Background()
 
-	tgContainer, err := SetupInfra(ctx)
+	tgContainer, component, err := SetupInfra(ctx)
 	if err != nil {
 		return err
 	}
 
-	cfg := config.Cfg{}
-	componentCfg, _ := cfg.GetFromViper("component")
-	ux.ShowSubTitle("infra:", fmt.Sprintf("Plan-%s", common.NormaliseStringLower(componentCfg.Value.(string))))
+	ux.ShowSubTitle("infra:", fmt.Sprintf("Plan-%s", common.NormaliseStringLower(component)))
 
+	var cmdToRun []string
+
+	if IsAllOptionEnabled() {
+		cmdToRun = []string{"terragrunt", "run-all", "plan"}
+	} else {
+		cmdToRun = []string{"terragrunt", "plan"}
+
+	}
 	_, err = tgContainer.
 		WithExec([]string{"ls", "-ltrh"}).
-		WithExec([]string{"terragrunt", "plan"}).ExitCode(ctx)
+		WithExec(cmdToRun).ExitCode(ctx)
 
 	if err != nil {
 		msg.ShowError("", "Terragrunt plan failed", err)
@@ -83,18 +117,22 @@ func InfraDeploy() error {
 	msg := tui.NewTUIMessage()
 	ctx := context.Background()
 
-	tgContainer, err := SetupInfra(ctx)
+	tgContainer, component, err := SetupInfra(ctx)
 	if err != nil {
 		return err
 	}
 
-	cfg := config.Cfg{}
-	componentCfg, _ := cfg.GetFromViper("component")
-	ux.ShowSubTitle("infra:", fmt.Sprintf("Apply-%s", common.NormaliseStringLower(componentCfg.Value.(string))))
+	ux.ShowSubTitle("infra:", fmt.Sprintf("Apply-%s", common.NormaliseStringLower(component)))
 
+	var cmdToRun []string
+	if IsAllOptionEnabled() {
+		cmdToRun = []string{"terragrunt", "run-all", "apply", "-auto-approve"}
+	} else {
+		cmdToRun = []string{"terragrunt", "apply", "-auto-approve"}
+	}
 	_, err = tgContainer.
 		WithExec([]string{"ls", "-ltrh"}).
-		WithExec([]string{"terragrunt", "apply", "-auto-approve"}).ExitCode(ctx)
+		WithExec(cmdToRun).ExitCode(ctx)
 
 	if err != nil {
 		msg.ShowError("", "Terragrunt apply failed", err)
@@ -110,18 +148,22 @@ func InfraDestroy() error {
 	msg := tui.NewTUIMessage()
 	ctx := context.Background()
 
-	tgContainer, err := SetupInfra(ctx)
+	tgContainer, component, err := SetupInfra(ctx)
 	if err != nil {
 		return err
 	}
 
-	cfg := config.Cfg{}
-	componentCfg, _ := cfg.GetFromViper("component")
-	ux.ShowSubTitle("infra:", fmt.Sprintf("Destroy-%s", common.NormaliseStringLower(componentCfg.Value.(string))))
+	ux.ShowSubTitle("infra:", fmt.Sprintf("Destroy-%s", common.NormaliseStringLower(component)))
 
+	var cmdToRun []string
+	if IsAllOptionEnabled() {
+		cmdToRun = []string{"terragrunt", "run-all", "destroy", "-auto-approve"}
+	} else {
+		cmdToRun = []string{"terragrunt", "destroy", "-auto-approve"}
+	}
 	_, err = tgContainer.
 		WithExec([]string{"ls", "-ltrh"}).
-		WithExec([]string{"terragrunt", "destroy", "-auto-approve"}).ExitCode(ctx)
+		WithExec(cmdToRun).ExitCode(ctx)
 
 	if err != nil {
 		msg.ShowError("", "Terragrunt destroy failed", err)
@@ -132,40 +174,29 @@ func InfraDestroy() error {
 	return nil
 }
 
-func SetupInfra(ctx context.Context) (*dagger.Container, error) {
+func SetupInfra(ctx context.Context) (*dagger.Container, string, error) {
 	msg := tui.NewTUIMessage()
 
-	// Fetching configuration from Viper.
-	cfg := config.Cfg{}
-	componentCfg, err := cfg.GetFromViper("component")
+	// Validating component
+	component, err := IsComponentAllowed()
 	if err != nil {
-		msg.ShowError("", "Failed to get component from viper", err)
-		return nil, err
+		msg.ShowError("", "Failed to validate component", err)
+		return nil, "", err
 	}
 
-	component := componentCfg.Value.(string)
-
-	// Get directory config.
-	dirs, dirErr := config.GetDirConfig()
-	if dirErr != nil {
-		msg.ShowError("", "Failed to get directory config", err)
-		return nil, dirErr
+	// Getting directories configuration
+	dirs, dirsErr := config.GetDirConfig()
+	if dirsErr != nil {
+		msg.ShowError("", "Failed to get directories configuration", err)
+		return nil, "", dirsErr
 	}
-
-	// If component isn't between 'function' or 'bucket, it'll throw an error.
-	if component != "function" && component != "bucket" {
-		msg.ShowError("", "Component must be 'function' or 'bucket'", nil)
-		return nil, err
-	}
-
-	msg.ShowInfo("", fmt.Sprintf("Setting up infra for %s", component))
 
 	// Booting dagger!
 	client, engineErr := daggerio.NewClientWithWorkDir(ctx,
 		dirs.GitRepoDir) // It's required to set the git root dir, since TG depends on discovery of the root dir.
 	if engineErr != nil {
 		msg.ShowError("", "Failed to boot dagger", err)
-		return nil, engineErr
+		return nil, "", engineErr
 	}
 
 	// Bootstrap container
@@ -182,8 +213,8 @@ func SetupInfra(ctx context.Context) (*dagger.Container, error) {
 	tgContainer, err = SetInfraConfigInContainer(tgContainer)
 	if err != nil {
 		msg.ShowError("", "Failed to set environment variables in container", err)
-		return nil, err
+		return nil, "", err
 	}
 
-	return tgContainer, nil
+	return tgContainer, component, nil
 }

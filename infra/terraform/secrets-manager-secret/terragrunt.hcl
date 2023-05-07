@@ -25,8 +25,8 @@ locals {
       ----------------------------------------------------------
   */
   module_repo =  get_env("TF_MODULE_REPO", "terraform-registry-aws-storage")
-  module_path = get_env("TF_MODULE_PATH", "modules/s3/s3-lambda-deployment")
-  module_version = get_env("TF_MODULE_VERSION", "v1.1.0")
+  module_path = get_env("TF_MODULE_PATH", "modules/secrets-manager")
+  module_version = get_env("TF_MODULE_VERSION", "v1.2.1")
   registry_base_url = include.registry.locals.registry_base_url
   registry_github_org = include.registry.locals.registry_github_org
   /*
@@ -40,7 +40,6 @@ locals {
   tags = {}
   source_url = format("%s/%s/%s//%s?ref=%s", local.registry_base_url, local.registry_github_org, local.module_repo, local.module_path, local.module_version)
   source_url_show = run_cmd("sh", "-c", format("export SOURCE_URL=%s; echo source url : [$SOURCE_URL]", local.source_url))
-  bucket_name =  format("%s-secrets-manager-rotator-%s-deployment", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
 }
 
 terraform {
@@ -49,11 +48,13 @@ terraform {
 
 inputs = {
   tags = merge(include.metadata.locals.tags, {
-    "Name" = "lambda-rotator-s3-deployment-bucket"
+    "Name" = "lambda-rotator-secrets-manager-demo"
   })
-  bucket_config = [
+  secrets_config = [
     {
-      name =  local.bucket_name
+      name = format("%s-secrets-manager-rotator-%s-secret", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+      path = format("/%s/secrets-manager-rotator/%s/my-demo-secret", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+      enable_random_secret_value = true
     }
   ]
 }

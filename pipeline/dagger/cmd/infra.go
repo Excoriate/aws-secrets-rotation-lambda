@@ -11,6 +11,7 @@ var (
 	plan      bool
 	deploy    bool
 	destroy   bool
+	all       bool
 	component string
 
 	// arguments that'll be mapped to environment variables.
@@ -60,6 +61,7 @@ func addInfraCMDFlags() {
 	InfraCMD.Flags().BoolVarP(&plan, "plan", "p", false, "Plan the infrastructure deployment.")
 	InfraCMD.Flags().BoolVarP(&deploy, "deploy", "k", false, "Deploy the infrastructure.")
 	InfraCMD.Flags().BoolVarP(&destroy, "destroy", "", false, "Destroy the infrastructure.")
+	InfraCMD.Flags().BoolVarP(&all, "all", "", false, "Apply command in all components")
 	InfraCMD.Flags().StringVarP(&component, "component", "c", "", "The component to deploy.")
 
 	// arguments that'll be mapped to environment variables.
@@ -74,6 +76,7 @@ func addInfraCMDFlags() {
 	_ = viper.BindPFlag("plan", InfraCMD.Flags().Lookup("plan"))
 	_ = viper.BindPFlag("deploy", InfraCMD.Flags().Lookup("deploy"))
 	_ = viper.BindPFlag("destroy", InfraCMD.Flags().Lookup("destroy"))
+	_ = viper.BindPFlag("all", InfraCMD.Flags().Lookup("all"))
 	_ = viper.BindPFlag("component", InfraCMD.Flags().Lookup("component"))
 
 	// arguments that'll be mapped to environment variables.
