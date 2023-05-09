@@ -11,7 +11,9 @@ import (
 	"time"
 )
 
-var mockCreateSecretEvent = "../mock/events/secretsmanager-event-1.json"
+//var mockCreateSecretEvent = "../../../mock/events/secretsmanager-event-1.json"
+//var mockCreateSecretEvent = "../../../mock/events/secret-to-rotate.json"
+var mockCreateSecretEvent = "../../../mock/events/secret-to-rotate-valid.json"
 
 func TestMainTest(t *testing.T) {
 	d := time.Now().Add(50 * time.Millisecond)
@@ -25,7 +27,7 @@ func TestMainTest(t *testing.T) {
 
 	t.Run("ReadEventJSON", func(t *testing.T) {
 		inputJson := ReadJSONFromFile(t, mockCreateSecretEvent)
-		var event sm.RotationEvent
+		var event sm.Event
 		err := json.Unmarshal(inputJson, &event)
 
 		assert.NoError(t, err, "should not error")
@@ -34,7 +36,7 @@ func TestMainTest(t *testing.T) {
 
 	t.Run("HandleRequest", func(t *testing.T) {
 		inputJson := ReadJSONFromFile(t, mockCreateSecretEvent)
-		var event sm.RotationEvent
+		var event sm.Event
 		_ = json.Unmarshal(inputJson, &event)
 
 		result, err := handleRequest(ctx, event)
@@ -43,6 +45,7 @@ func TestMainTest(t *testing.T) {
 		assert.NotNil(t, result, "result should not be nil")
 	})
 }
+
 func ReadJSONFromFile(t *testing.T, inputFile string) []byte {
 	inputJSON, err := os.ReadFile(inputFile)
 	if err != nil {

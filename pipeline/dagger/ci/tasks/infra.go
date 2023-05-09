@@ -54,7 +54,7 @@ func SetInfraConfigInContainer(c *dagger.Container) (*dagger.Container, error) {
 }
 
 func IsComponentAllowed() (string, error) {
-	components := []string{"lambda", "bucket", "secret", "data"}
+	components := []string{"lambda", "bucket", "secret", "data", "rotation"}
 	cfg := config.Cfg{}
 	componentCfg, _ := cfg.GetFromViper("component")
 

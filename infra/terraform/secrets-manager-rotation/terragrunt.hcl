@@ -24,9 +24,9 @@ locals {
       * These are the values that will be used to construct the module source URL.
       ----------------------------------------------------------
   */
-  module_repo =  get_env("TF_MODULE_REPO", "terraform-registry-aws-events")
-  module_path = get_env("TF_MODULE_PATH", "modules/lambda/lambda-function")
-  module_version = get_env("TF_MODULE_VERSION", "v0.1.11")
+  module_repo =  get_env("TF_MODULE_REPO", "terraform-registry-aws-storage")
+  module_path = get_env("TF_MODULE_PATH", "modules/secrets-manager-rotation")
+  module_version = get_env("TF_MODULE_VERSION", "v1.2.3")
   registry_base_url = include.registry.locals.registry_base_url
   registry_github_org = include.registry.locals.registry_github_org
   /*
@@ -36,12 +36,13 @@ locals {
      * These 'tags' values are merged with what's defined in the
       '_metadata.hcl' file.
      ----------------------------------------------------------
-  */
+ */
   tags = {}
   source_url = format("%s/%s/%s//%s?ref=%s", local.registry_base_url, local.registry_github_org, local.module_repo, local.module_path, local.module_version)
   source_url_show = run_cmd("sh", "-c", format("export SOURCE_URL=%s; echo source url : [$SOURCE_URL]", local.source_url))
 
   lambda_name = format("%s-secrets-manager-rotator-%s-function", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+  rotation_name = format("%s-secrets-manager-rotator-%s-rotation", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
 }
 
 terraform {
@@ -50,56 +51,20 @@ terraform {
 
 inputs = {
   tags = merge(include.metadata.locals.tags, {
-    "Name" = "lambda-rotator-function"
+    "Name" = "lambda-rotator-secrets-manager-demo"
   })
-
-  lambda_config = [
+  rotation_config = [
     {
-      name = local.lambda_name
-      name = local.lambda_name
-      handler       = "secrets-manager-rotator-lambda"
-      runtime = "go1.x"
-      publish = true
-      deployment_type = {
-        from_s3_existing_file = true
-      }
-    }
-  ]
-
-  lambda_observability_config = [
-    {
-      name         = local.lambda_name
-      logs_enabled = true
-      tracing_enabled = true
-      tracing_mode = "Active"
-    }
-  ]
-
-  lambda_permissions_config = [
-    {
-      name         = local.lambda_name
-    }
-  ]
-
-  lambda_enable_secrets_manager = [
-    {
-      name        = local.lambda_name
+      name        = local.rotation_name
       secret_name = get_env("TF_VAR_secret_name")
+      rotation_lambda_name = local.lambda_name
     }
   ]
 
-  lambda_s3_from_existing_config = [
+  rotation_rules_config = [
     {
-      name              = local.lambda_name
-      s3_bucket         = "dev-secrets-manager-rotator-demo-deployment"
-      s3_key            = "deployments/secrets-manager-rotator-lambda.zip"
-    }
-  ]
-
-  lambda_enable_secrets_manager_rotation = [
-    {
-      name              = local.lambda_name
-      secrets_to_rotate = ["/dev/secrets-manager-rotator/demo/my-demo-secret"]
+      name                              = local.rotation_name
+      rotation_by_schedule_expression = "cron(0 7/4 * * ? *)"
     }
   ]
 }

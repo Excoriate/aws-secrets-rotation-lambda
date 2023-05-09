@@ -7,10 +7,23 @@ import (
 )
 
 func NewAWS(region string) (aws.Config, error) {
+	if region == "" {
+		cfg, err := config.LoadDefaultConfig(context.TODO(), func(lo *config.LoadOptions) error {
+			return nil
+		})
+
+		if err != nil {
+			return aws.Config{}, err
+		}
+
+		return cfg, nil
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.TODO(), func(lo *config.LoadOptions) error {
 		lo.DefaultRegion = region
 		return nil
 	})
+
 	if err != nil {
 		return aws.Config{}, err
 	}
