@@ -58,7 +58,7 @@ func (s *StepsClient) CreateSecretStep() error {
 			}
 
 			// Create a new secret version, with the new rotated value.
-			_, err = s.Client.PutSecretValue(secretId, newSecretValue, token, stagePending)
+			_, err = s.Client.PutSecretValue(secretId, token, newSecretValue, stagePending)
 			if err != nil {
 				s.Logger.Error("Error creating new secret version", zap.Error(err))
 				return erroer.NewRotationError("Error creating new secret version", err)

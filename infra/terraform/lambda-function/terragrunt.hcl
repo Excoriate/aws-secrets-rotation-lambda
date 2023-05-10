@@ -26,7 +26,7 @@ locals {
   */
   module_repo =  get_env("TF_MODULE_REPO", "terraform-registry-aws-events")
   module_path = get_env("TF_MODULE_PATH", "modules/lambda/lambda-function")
-  module_version = get_env("TF_MODULE_VERSION", "v0.1.12")
+  module_version = get_env("TF_MODULE_VERSION", "v0.1.13")
   registry_base_url = include.registry.locals.registry_base_url
   registry_github_org = include.registry.locals.registry_github_org
   /*
