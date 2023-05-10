@@ -1,8 +1,10 @@
 package rotation
 
 import (
+	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"github.com/excoriate/aws-secrets-rotation-lambda/internal/client"
 	"github.com/excoriate/aws-secrets-rotation-lambda/internal/erroer"
 	"go.uber.org/zap"
@@ -28,7 +30,7 @@ type StepsClient struct {
 func (s *StepsClient) CreateSecretStep() error {
 	secretId := *s.SecretData.ARN
 	token := *s.SecretEvent.Token
-	pendingLabel := s.StagingLabels.Pending
+	stagePending := s.StagingLabels.Pending
 
 	// This step tries to retrieve the secret version with the AWSPENDING stage label
 	// associated with the given token. If the secret version is found,
@@ -43,11 +45,12 @@ func (s *StepsClient) CreateSecretStep() error {
 	//
 	// This approach ensures that a new secret version is created only when needed,
 	//avoiding unnecessary secret version creations and maintaining the integrity of the rotation process.
-	_, err := s.Client.GetSecretValueByStageLabel(secretId, token, pendingLabel)
+	_, err := s.Client.GetSecretValueByStageLabel(secretId, token, stagePending)
 	if err != nil {
+		var resourceNotFoundError *types.ResourceNotFoundException
 		// If the secret isn't found, that's fine, Let's create a new secret version then.
 		excChars := "/@'\"\\"
-		if err.Error() == "ResourceNotFoundException: Secrets Manager can't find the specified secret." {
+		if errors.As(err, &resourceNotFoundError) {
 			newSecretValue, err := s.Client.GenerateRandomPassword(excChars)
 			if err != nil {
 				s.Logger.Error("Error generating random password", zap.Error(err))
@@ -55,13 +58,13 @@ func (s *StepsClient) CreateSecretStep() error {
 			}
 
 			// Create a new secret version, with the new rotated value.
-			_, err = s.Client.PutSecretValue(secretId, newSecretValue, token, pendingLabel)
+			_, err = s.Client.PutSecretValue(secretId, newSecretValue, token, stagePending)
 			if err != nil {
 				s.Logger.Error("Error creating new secret version", zap.Error(err))
 				return erroer.NewRotationError("Error creating new secret version", err)
 			}
-		}
 
+		}
 	}
 
 	return nil
