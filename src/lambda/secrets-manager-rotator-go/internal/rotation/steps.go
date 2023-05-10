@@ -1,6 +1,7 @@
 package rotation
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/excoriate/aws-secrets-rotation-lambda/internal/client"
 	"github.com/excoriate/aws-secrets-rotation-lambda/internal/erroer"
@@ -75,6 +76,47 @@ func (s *StepsClient) TestSecretStep() error {
 }
 
 func (s *StepsClient) FinishSecretStep() error {
+	arn := *s.SecretData.ARN
+	token := *s.SecretEvent.Token
+	s.Logger.Info("Finishing secret rotation", zap.String("ARN", arn))
+
+	secret, err := s.Client.GetSecret(arn)
+	if err != nil {
+		s.Logger.Error(fmt.Sprintf("Error describing secret with arn %s", arn), zap.Error(err))
+		return erroer.NewRotationError(fmt.Sprintf("Error describing secret with arn %s", arn), err)
+	}
+
+	var currentVersion string
+	// Check versions
+	for version, _ := range secret.VersionIdsToStages {
+		if secret.VersionIdsToStages[version] != nil {
+			if version == token {
+				// The correct version is already marked as current, no need to do anything.
+				s.Logger.Info("The correct version %s is already marked as current, no need to do anything.", zap.String("version", version))
+				return nil
+			}
+
+			s.Logger.Info("Setting version %s as current", zap.String("version", version))
+			currentVersion = version
+			break
+		}
+	}
+
+	// Finalize by staging the secret version current
+	currentStage := s.StagingLabels.Current
+	updatedSecret, finErr := s.Client.UpdateSecretVersion(arn, token, currentStage, currentVersion)
+
+	if finErr != nil {
+		s.Logger.Error(fmt.Sprintf("Error finalizing secret rotation with arn %s, "+
+			"while updating the secret with token %s to stage %s and version %s", arn, token,
+			currentStage, currentVersion), zap.Error(finErr))
+
+		return erroer.NewRotationError(fmt.Sprintf("Error finalizing secret rotation with arn %s,"+
+			" "+"while updating the secret with token %s to stage %s and version %s", arn, token,
+			currentStage, currentVersion), finErr)
+	}
+
+	s.Logger.Info("Secret rotation finished successfully for secret with ARN %s, and token %s", zap.String("ARN", *updatedSecret.ARN), zap.String("token", token))
 	return nil
 }
 

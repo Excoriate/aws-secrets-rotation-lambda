@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/excoriate/aws-secrets-rotation-lambda/internal/rotation"
 	"go.uber.org/zap"
+	"os"
 )
 
 // GetLogger returns a new zap logger
@@ -80,6 +81,12 @@ func handleRequest(ctx context.Context, event rotation.Event) (string, error) {
 	eventJson, _ := json.MarshalIndent(event, "", "  ")
 	logger.Info("Event received for a secret rotation attempt: ", zap.String("event",
 		string(eventJson)))
+
+	// Feature flag, enable/disable it setting the environment variable TF_VAR_rotation_lambda_enabled
+	isEnabled := os.Getenv("TF_VAR_rotation_lambda_enabled")
+	if isEnabled == "false" {
+		logger.Fatal("Rotation lambda is disabled")
+	}
 
 	// Create the rotator client.
 	c, err := rotation.NewRotator(event, logger)

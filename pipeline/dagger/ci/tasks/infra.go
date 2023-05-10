@@ -25,6 +25,7 @@ func SetInfraConfigInContainer(c *dagger.Container) (*dagger.Container, error) {
 		"TF_VAR_rotator_lambda_name",
 		"TF_VAR_secret_name",
 		"TF_VAR_rotation_schedule",
+		"TF_VAR_rotation_lambda_enabled",
 		"TF_VERSION",
 		"TG_VERSION",
 	}

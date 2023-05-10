@@ -24,6 +24,30 @@ type SecretsManager interface {
 		error)
 	PutSecretValue(arn, token, value, stage string) (*secretsmanager.PutSecretValueOutput, error)
 	GenerateRandomPassword(excludeChars string) (string, error)
+	UpdateSecretVersion(arn, token, stage, currentVersion string) (*secretsmanager.UpdateSecretVersionStageOutput, error)
+}
+
+func (s *SecretsManagerClient) UpdateSecretVersion(arn, token, stage,
+	currentVersion string) (*secretsmanager.UpdateSecretVersionStageOutput, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	secretVersionOutput, err := s.Client.UpdateSecretVersionStage(
+		ctx,
+		&secretsmanager.UpdateSecretVersionStageInput{
+			SecretId:            aws.String(arn),
+			VersionStage:        aws.String(stage),
+			MoveToVersionId:     aws.String(token),
+			RemoveFromVersionId: aws.String(currentVersion),
+		},
+	)
+
+	if err != nil {
+		s.Logger.Error("error updating secret version stage", zap.Error(err))
+		return nil, fmt.Errorf("error updating secret version stage: %w", err)
+	}
+
+	return secretVersionOutput, nil
 }
 
 func (s *SecretsManagerClient) GenerateRandomPassword(excludeChars string) (string, error) {

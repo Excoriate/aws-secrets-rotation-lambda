@@ -103,4 +103,14 @@ inputs = {
       secrets_to_rotate = [get_env("TF_VAR_secret_name")]
     }
   ]
+
+  lambda_host_config = [
+    {
+      name = local.lambda_name
+      environment_variables = {
+        "IS_ENABLED"  = get_env("TF_VAR_rotation_lambda_enabled", "true")
+      }
+    }
+  ]
+
 }
