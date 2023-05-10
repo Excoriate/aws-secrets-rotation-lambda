@@ -33,7 +33,7 @@ func (s *StepsClient) CreateSecretStep() error {
 	// associated with the given token. If the secret version is found,
 	// it means that the AWSPENDING version is already created,
 	// and there is no need to create a new version. In this case,
-	//the rotation process can proceed to the next step.
+	// the rotation process can proceed to the next step.
 	//
 	// However, if the secret version with the AWSPENDING stage label is not found,
 	// it indicates that the secret version with this stage label needs to be created.

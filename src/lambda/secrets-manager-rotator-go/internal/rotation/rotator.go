@@ -158,15 +158,18 @@ DescribeSecretOutput, error) {
 	// knowing that there's a working version of the secret that the application or service is
 	// already using. This check also helps to maintain the integrity of the secret rotation
 	//process and avoid unexpected issues related to missing or improperly configured secrets.
-	_, err = r.Client.GetSecretValueByStageLabel(secretId, token, stagingLabels.Current)
-	if err != nil {
+	currentSecretVersion, currentVersionErr := r.Client.GetSecretValueByStageLabel(secretId, "",
+		stagingLabels.Current)
+	if currentVersionErr != nil {
 		r.Logger.Error(fmt.Sprintf("This secret %s can not be rotated because there is no version"+
 			" "+"present with AWSCURRENT stage label", secretId))
+
 		return nil, erroer.NewSecretError(fmt.Sprintf(
 			"this secret %s can not be rotated because there is no version"+" "+"present with"+
-				" AWSCURRENT stage label", secretId), nil)
+				" AWSCURRENT stage label", secretId), currentVersionErr)
 	}
 
+	r.Logger.Info(fmt.Sprintf("Successfully found a version with AWSCURRENT stage label in secret %s, with token (versionId) %s", secretId, currentSecretVersion.VersionId))
 	return secret, nil
 }
 
