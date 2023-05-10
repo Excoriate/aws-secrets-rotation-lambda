@@ -40,7 +40,8 @@ locals {
   tags = {}
   source_url = format("%s/%s/%s//%s?ref=%s", local.registry_base_url, local.registry_github_org, local.module_repo, local.module_path, local.module_version)
   source_url_show = run_cmd("sh", "-c", format("export SOURCE_URL=%s; echo source url : [$SOURCE_URL]", local.source_url))
-  bucket_name =  format("%s-secrets-manager-rotator-%s-deployment", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+
+  bucket_name =  format("%s-%s-secrets-manager-rotator-deployments-%s", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_aws_region"), get_env("TF_VAR_rotator_lambda_name"))
 }
 
 terraform {
@@ -54,6 +55,7 @@ inputs = {
   bucket_config = [
     {
       name =  local.bucket_name
+      force_destroy = true
     }
   ]
 }

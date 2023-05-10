@@ -40,6 +40,7 @@ locals {
   tags = {}
   source_url = format("%s/%s/%s//%s?ref=%s", local.registry_base_url, local.registry_github_org, local.module_repo, local.module_path, local.module_version)
   source_url_show = run_cmd("sh", "-c", format("export SOURCE_URL=%s; echo source url : [$SOURCE_URL]", local.source_url))
+  secret_path = format("/%s/%s/secrets-manager-rotator-demo", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_aws_region"))
 }
 
 terraform {
@@ -52,8 +53,11 @@ inputs = {
   })
   secrets_config = [
     {
-      name = format("%s-secrets-manager-rotator-%s-secret", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
-      path = format("/%s/secrets-manager-rotator/%s/my-demo-secret", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+      name = get_env("TF_VAR_secret_name")
+
+      // This is just for demo purposes, normally, the secret isn't created as part of these modules.
+      // It's created in a different and just passed.
+      path = format("%s/%s", local.secret_path, "my-demo-secret-to-rotate-1")
       enable_random_secret_value = true
     }
   ]

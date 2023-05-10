@@ -26,7 +26,7 @@ locals {
   */
   module_repo =  get_env("TF_MODULE_REPO", "terraform-registry-aws-storage")
   module_path = get_env("TF_MODULE_PATH", "modules/secrets-manager-rotation")
-  module_version = get_env("TF_MODULE_VERSION", "v1.2.3")
+  module_version = get_env("TF_MODULE_VERSION", "v1.2.4")
   registry_base_url = include.registry.locals.registry_base_url
   registry_github_org = include.registry.locals.registry_github_org
   /*
@@ -41,8 +41,8 @@ locals {
   source_url = format("%s/%s/%s//%s?ref=%s", local.registry_base_url, local.registry_github_org, local.module_repo, local.module_path, local.module_version)
   source_url_show = run_cmd("sh", "-c", format("export SOURCE_URL=%s; echo source url : [$SOURCE_URL]", local.source_url))
 
-  lambda_name = format("%s-secrets-manager-rotator-%s-function", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
-  rotation_name = format("%s-secrets-manager-rotator-%s-rotation", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_rotator_lambda_name"))
+  lambda_name = format("%s-%s-secrets-manager-rotator-function-%s", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_aws_region"), get_env("TF_VAR_rotator_lambda_name"))
+  rotation_name = format("%s-%s-rotation-secret-%s", get_env("TF_VAR_environment", "dev"), get_env("TF_VAR_aws_region"), get_env("TF_VAR_secret_name"))
 }
 
 terraform {
@@ -50,21 +50,24 @@ terraform {
 }
 
 inputs = {
+
   tags = merge(include.metadata.locals.tags, {
     "Name" = "lambda-rotator-secrets-manager-demo"
   })
+
   rotation_config = [
     {
       name        = local.rotation_name
       secret_name = get_env("TF_VAR_secret_name")
       rotation_lambda_name = local.lambda_name
+      disable_built_in_lambda_permissions = true
     }
   ]
 
   rotation_rules_config = [
     {
       name                              = local.rotation_name
-      rotation_by_schedule_expression = "cron(0 7/4 * * ? *)"
+      rotation_by_schedule_expression = get_env("TF_VAR_rotation_schedule")
     }
   ]
 }

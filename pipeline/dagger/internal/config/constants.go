@@ -63,6 +63,10 @@ func GetInfraWorkDirPath(module string) string {
 		path = fmt.Sprintf("%s/%s", infraBaseDir, "secrets-manager-secret")
 	}
 
+	if module == "rotation" {
+		path = fmt.Sprintf("%s/%s", infraBaseDir, "secrets-manager-rotation")
+	}
+
 	if module == "data" {
 		path = fmt.Sprintf("%s/%s", infraBaseDir, "lambda-data")
 	}
