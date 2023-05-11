@@ -1,4 +1,3 @@
-![logo-simple.png](images/logo-simple.png)
 <h1 align="center">
   AWS Secrets Rotator ⚙️️
 </h1>
