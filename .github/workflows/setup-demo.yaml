@@ -19,7 +19,7 @@ env:
     AWS_REGION: us-east-1
 
 jobs:
-    run-cli:
+    rotator-ci:
         runs-on: ubuntu-latest
         steps:
             - name: Check out current repository
@@ -39,6 +39,6 @@ jobs:
                   mv pipeline-dagger ../../pipeline-dagger
 
 
-            - name: Deploy Demo Secret
+            - name: Compile
               if: ${{ github.event.inputs.option == 'Create' }}
-              run: ./pipeline-dagger infra --component=secret --plan
+              run: ./pipeline-dagger lambda --compile --lambda-src=src/lambda/secrets-manager-rotator-go
