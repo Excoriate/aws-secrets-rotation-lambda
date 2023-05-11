@@ -118,6 +118,10 @@ jobs:
               with:
                   name: pipeline
 
+            - name: Make pipeline executable
+              run: |
+                chmod +x pipeline-dagger
+
             - name: Deployment bucket plan
               run: |
                   ./pipeline-dagger infra --component=bucket --plan
