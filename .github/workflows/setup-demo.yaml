@@ -91,3 +91,38 @@ jobs:
             - name: Generate Zip
               run: |
                   ./pipeline-dagger lambda --package-zip --existing-binary=secrets-manager-rotator-lambda
+
+            - name: Store Zip File
+              uses: actions/upload-artifact@v3
+              with:
+                  name: lambda-zip
+                  path: |
+                      output/lambda-zip/linux/amd64/secrets-manager-rotator-lambda.zip
+
+
+    create-deployment-bucket:
+        needs: [rotator-ci, compile-zip]
+        name: Create Deployment Bucket
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out current repository
+              uses: actions/checkout@v3
+
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '>=1.20.0'
+
+            - name: Download Pipeline
+              uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Deployment bucket plan
+              run: |
+                  ./pipeline-dagger infra --component=bucket --plan
+
+
+            - name: Deployment bucket plan
+              run: |
+                  ./pipeline-dagger infra --component=bucket --deploy
