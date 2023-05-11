@@ -68,6 +68,11 @@ jobs:
             - name: Download Artifacts
               uses: actions/download-artifact@v3
 
+            - name: Move Binaries to root
+              run: |
+                    mv rotator/pipeline-dagger .
+                    mv rotator/output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda .
+
             - name: Generate Zip
               run: |
                   ./pipeline-dagger lambda --package-zip --existing-binary=output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda
