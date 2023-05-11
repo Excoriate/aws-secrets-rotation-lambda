@@ -92,6 +92,8 @@ task pipeline-dagger-run -- lambda --upload-to-s3 --s3-bucket=dev-us-east-1-secr
 --s3-file-to-upload=output/lambda-zip/linux/amd64/secrets-manager-rotator-lambda.zip
 ```
 
+>**Note**: Ensure that the necessary `AWS_*` environment variables are exported.
+
 ## Roadmap 🗓️
 
 There are more things to do, however, the following are the main ones:
