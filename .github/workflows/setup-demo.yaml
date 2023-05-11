@@ -1,5 +1,5 @@
 ---
-name: Setup Demo
+name: Setup Demo Config
 
 on:
     workflow_dispatch:
@@ -20,6 +20,7 @@ env:
 
 jobs:
     rotator-ci:
+        name: Rotator CI
         runs-on: ubuntu-latest
         steps:
             - name: Check out current repository
