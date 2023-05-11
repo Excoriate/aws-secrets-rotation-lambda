@@ -18,20 +18,20 @@ env:
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_REGION: us-east-1
     # Specific implementation configuration.
-    TF_STATE_BUCKET_REGION: "eu-central-1"
-    TF_STATE_BUCKET: "platform-tfstate-account-sandbox"
-    TF_STATE_LOCK_TABLE: "platform-tfstate-account-sandbox"
-    TF_REGISTRY_GITHUB_ORG: "Excoriate"
-    TF_REGISTRY_BASE_URL: "git::https://github.com"
-    TF_VAR_aws_region: "us-east-1"
-    TF_VAR_environment: "dev"
-    TF_VAR_rotator_lambda_name: "demo"
+    TF_STATE_BUCKET_REGION: eu-central-1
+    TF_STATE_BUCKET: platform-tfstate-account-sandbox
+    TF_STATE_LOCK_TABLE: platform-tfstate-account-sandbox
+    TF_REGISTRY_GITHUB_ORG: Excoriate
+    TF_REGISTRY_BASE_URL: git::https://github.com
+    TF_VAR_aws_region: us-east-1
+    TF_VAR_environment: dev
+    TF_VAR_rotator_lambda_name: demo
     # The /dev/ part of the below secret path should be concise with the TF_VAR_environment variable.
-    TF_VAR_secret_name: "/dev/us-east-1/secrets-manager-rotator-demo/my-demo-secret-to-rotate-1"
-    TF_VAR_rotation_schedule: "cron(0 7/4 * * ? *)"
+    TF_VAR_secret_name: /dev/us-east-1/secrets-manager-rotator-demo/my-demo-secret-to-rotate-1
+    TF_VAR_rotation_schedule: cron(0 7/4 * * ? *)
     TF_VAR_rotation_lambda_enabled: true
-    TF_VERSION: "v1.4.6"
-    TG_VERSION: "v0.42.8"
+    TF_VERSION: v1.4.6
+    TG_VERSION: v0.42.8
 
 jobs:
     rotator-ci:
@@ -135,7 +135,7 @@ jobs:
 
             - name: Make pipeline executable
               run: |
-                chmod +x pipeline-dagger
+                  chmod +x pipeline-dagger
 
             - name: Deployment bucket plan
               run: |
@@ -145,3 +145,37 @@ jobs:
             - name: Deployment bucket plan
               run: |
                   ./pipeline-dagger infra --component=bucket --deploy
+
+
+    deploy-lambda-package:
+        needs: [rotator-ci, compile-zip, create-deployment-bucket]
+        name: Deploy lambda package
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out current repository
+              uses: actions/checkout@v3
+
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '>=1.20.0'
+
+            - name: Download Pipeline
+              uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Make pipeline executable
+              run: |
+                  chmod +x pipeline-dagger
+
+            - name: Download Package ZIP file
+              uses: actions/download-artifact@v3
+              with:
+                  name: lambda-zip
+
+            - name: Deploy into S3
+              run: |
+                  ./pipeline-dagger lambda --upload-to-s3 --s3-bucket=${{TF_VAR_environment}}-${{TF_VAR_aws_region}}-secrets-manager-rotator-deployments-${{TF_VAR_rotator_lambda_name}} \
+                    --s3-destination-path=releases \
+                    --s3-file-to-upload=secrets-manager-rotator-lambda.zip
