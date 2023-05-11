@@ -1,5 +1,5 @@
 ---
-name: Setup Demo Config
+name: Remove Demo Config
 
 on:
     workflow_dispatch:
