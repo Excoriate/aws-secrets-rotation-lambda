@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-var mockCreateSecretEvent = "../../../mock/events/secretsmanager-event-1.json"
+//var mockCreateSecretEvent = "../../../mock/events/secretsmanager-event-1.json"
 
 //var mockCreateSecretEvent = "../../../mock/events/secret-to-rotate.json"
-//var mockCreateSecretEvent = "../../../mock/events/secret-to-rotate-valid.json"
+var mockCreateSecretEvent = "../../../mock/events/secret-to-rotate-valid.json"
 
 func TestMainTest(t *testing.T) {
 	d := time.Now().Add(50 * time.Millisecond)
