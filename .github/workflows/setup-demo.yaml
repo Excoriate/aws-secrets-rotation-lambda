@@ -44,12 +44,18 @@ jobs:
               run: |
                   ./pipeline-dagger lambda --compile --lambda-src=src/lambda/secrets-manager-rotator-go
 
-            - name: Store binaries
+            - name: Store Dagger pipeline
               uses: actions/upload-artifact@v3
               with:
-                  name: rotator
+                  name: pipeline
                   path: |
                       pipeline-dagger
+
+            - name: Store Compiled Lambda
+              uses: actions/upload-artifact@v3
+              with:
+                  name: compiled-rotator
+                  path: |
                       output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda
 
     compile-zip:
@@ -65,14 +71,25 @@ jobs:
               with:
                   go-version: '>=1.20.0'
 
-            - name: Download Artifacts
+            - name: Download Pipeline
               uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Download Compiled Rotator
+              uses: actions/download-artifact@v3
+              with:
+                  name: compiled-rotator
 
             - name: Move Binaries to root
+              # It's required to consider that the (named) artifacts are created in their own directories.
               run: |
-                    mv rotator/pipeline-dagger .
-                    mv rotator/output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda .
+                    mv pipeline/pipeline-dagger .
+                    mv compiled-rotator/output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda .
                     chmod +x pipeline-dagger
+
+            - name: Current files in WorkDir
+              run: ls -ltrah
 
             - name: Generate Zip
               run: |
