@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/config"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/daggerio"
+	s32 "github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/s3"
 	"github.com/excoriate/aws-secrets-rotation-lambda/dagger-pipeline/internal/tui"
+	"strings"
 )
 
 func UploadToS3() error {
@@ -31,22 +33,60 @@ func UploadToS3() error {
 	}
 
 	// Fetching configuration from Viper.
-	//cfg := config.Cfg{}
-	//cfgValue, err := cfg.GetFromViper("lambda-src")
-	//lambdaSRCDir := cfgValue.Value.(string)
+	cfg := config.Cfg{}
+	s3BucketCfg, s3BucketCfgErr := cfg.GetFromViper("s3-bucket")
+	if s3BucketCfgErr != nil {
+		msg.ShowError("", "Failed to get s3 bucket configuration", s3BucketCfgErr)
+		return s3BucketCfgErr
+	}
 
-	// Validating lambda source directory.
-	//compiler := lambda.NewCompiler(client, ctx)
-	//srcPath, err := lambda.IsLambdaSRCDirValid(lambdaSRCDir, dirs)
+	s3Bucket := s3BucketCfg.Value.(string)
+	s3DestinationPathCfg, s3DestinationPathErr := cfg.GetFromViper("s3-destination-path")
+	if s3DestinationPathErr != nil {
+		msg.ShowError("", "Failed to get s3 destination path", s3DestinationPathErr)
+		return s3DestinationPathErr
+	}
 
-	if err != nil {
-		msg.ShowError("", "Failed to validate lambda source directory", err)
+	s3DestinationPath := s3DestinationPathCfg.Value.(string)
+
+	s3FileToUploadCfg, s3FileToUploadCfgErr := cfg.GetFromViper("s3-file-to-upload")
+	if s3FileToUploadCfgErr != nil {
+		msg.ShowError("", "Failed to get s3 file to upload", s3FileToUploadCfgErr)
+		return s3FileToUploadCfgErr
+	}
+
+	s3FileToUpload := s3FileToUploadCfg.Value.(string)
+
+	msg.ShowInfo("", fmt.Sprintf("Task S3-Upload will upload the file %s to the bucket %s in the"+
+		" destination path %s", s3FileToUpload, s3Bucket, s3DestinationPath))
+
+	// Check if the destination path doesn't includes a file. If it doesn't,
+	//add the filename of the s3FileToUpload to the destination path.
+	if !strings.Contains(s3DestinationPath, "/") {
+		msg.ShowWarning("", "The destination path doesn't include a file. "+
+			"Adding the filename of the"+" s3FileToUpload to the destination path.")
+
+		// The s3FileToUpload is a path. The filename always is in the last part of the path.
+		//Add it smartly.
+		s3DestinationPath = fmt.Sprintf("%s/%s", s3DestinationPath, strings.Split(s3FileToUpload, "/")[len(strings.Split(s3FileToUpload, "/"))-1])
+
+		msg.ShowInfo("", fmt.Sprintf("The new destination path is %s", s3DestinationPath))
+	}
+
+	s3, uploadErr := s32.NewS3(client, ctx)
+	if uploadErr != nil {
+		msg.ShowError("", "Failed to create S3 client", uploadErr)
+		return uploadErr
+	}
+
+	if s3.UploadFile(s3Bucket, s3DestinationPath, s3FileToUpload) != nil {
+		msg.ShowError("", "Failed to upload file to S3", err)
 		return err
 	}
 
-	defer client.Close()
+	msg.ShowSuccess("", "Successfully uploaded file to S3")
 
-	//msg.ShowSuccess("", fmt.Sprintf("The zip file has been created: %s", zipPath))
+	defer client.Close()
 
 	return nil
 }

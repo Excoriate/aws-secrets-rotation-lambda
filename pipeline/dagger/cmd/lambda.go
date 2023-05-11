@@ -8,12 +8,15 @@ import (
 )
 
 var (
-	packageZip         bool
-	s3Upload           bool
-	compile            bool
-	lambdaSrc          string
-	existingBinary     string
-	s3TargetFileUpload string
+	packageZip     bool
+	s3Upload       bool
+	compile        bool
+	lambdaSrc      string
+	existingBinary string
+	// S3 specific flags.
+	s3FileToUpload    string
+	s3Bucket          string
+	s3DestinationPath string
 )
 
 var LambdaCMD = &cobra.Command{
@@ -57,13 +60,18 @@ func addFlags() {
 	LambdaCMD.Flags().StringVarP(&lambdaSrc, "lambda-src", "s", ".",
 		"Lambda source code directory. If it's not set, it'll use the current directory.")
 	LambdaCMD.Flags().StringVarP(&existingBinary, "existing-binary", "b", "", "Existing binary to package.")
-	LambdaCMD.Flags().StringVarP(&s3TargetFileUpload, "s3-target-file", "", "", "S3 target file name.")
+	LambdaCMD.Flags().StringVarP(&s3FileToUpload, "s3-file-to-upload", "", "",
+		"Local file that will be uploaded into S3..")
+	LambdaCMD.Flags().StringVarP(&s3Bucket, "s3-bucket", "", "", "S3 bucket name.")
+	LambdaCMD.Flags().StringVarP(&s3DestinationPath, "s3-destination-path", "", "", "S3 destination path.")
 	_ = viper.BindPFlag("package-zip", LambdaCMD.Flags().Lookup("generate-zip"))
 	_ = viper.BindPFlag("upload-to-s3", LambdaCMD.Flags().Lookup("upload-to-s3"))
 	_ = viper.BindPFlag("lambda-src", LambdaCMD.Flags().Lookup("lambda-src"))
 	_ = viper.BindPFlag("compile", LambdaCMD.Flags().Lookup("compile"))
-	_ = viper.BindPFlag("s3-target-file", LambdaCMD.Flags().Lookup("s3-target-file"))
 	_ = viper.BindPFlag("existing-binary", LambdaCMD.Flags().Lookup("existing-binary"))
+	_ = viper.BindPFlag("s3-file-to-upload", LambdaCMD.Flags().Lookup("s3-file-to-upload"))
+	_ = viper.BindPFlag("s3-bucket", LambdaCMD.Flags().Lookup("s3-bucket"))
+	_ = viper.BindPFlag("s3-destination-path", LambdaCMD.Flags().Lookup("s3-destination-path"))
 }
 
 func init() {
