@@ -179,3 +179,94 @@ jobs:
                   ./pipeline-dagger lambda --upload-to-s3 --s3-bucket=${{env.TF_VAR_environment}}-${{env.TF_VAR_aws_region}}-secrets-manager-rotator-deployments-${{env.TF_VAR_rotator_lambda_name}} \
                     --s3-destination-path=releases \
                     --s3-file-to-upload=secrets-manager-rotator-lambda.zip
+
+    deploy-sample-secret:
+        needs: [rotator-ci, compile-zip, create-deployment-bucket, deploy-lambda-package]
+        name: Deploy sample secret
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out current repository
+              uses: actions/checkout@v3
+
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '>=1.20.0'
+
+            - name: Download Pipeline
+              uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Make pipeline executable
+              run: |
+                  chmod +x pipeline-dagger
+
+            - name: Plan sample secret
+              run: |
+                  ./pipeline-dagger infra --component=secret --plan
+
+            - name: Deploy sample secret
+              run: |
+                  ./pipeline-dagger infra --component=secret --deploy
+
+
+    deploy-lambda-function:
+        needs: [rotator-ci, compile-zip, create-deployment-bucket, deploy-lambda-package, deploy-sample-secret]
+        name: Deploy lambda function
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out current repository
+              uses: actions/checkout@v3
+
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '>=1.20.0'
+
+            - name: Download Pipeline
+              uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Make pipeline executable
+              run: |
+                  chmod +x pipeline-dagger
+
+            - name: Plan lambda function
+              run: |
+                  ./pipeline-dagger infra --component=lambda --plan
+
+            - name: Deploy lambda function
+              run: |
+                  ./pipeline-dagger infra --component=lambda --deploy
+
+    add-rotation-config:
+        needs: [rotator-ci, compile-zip, create-deployment-bucket, deploy-lambda-package, deploy-sample-secret, deploy-lambda-function]
+        name: Implement rotation config
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out current repository
+              uses: actions/checkout@v3
+
+            - name: Set up Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '>=1.20.0'
+
+            - name: Download Pipeline
+              uses: actions/download-artifact@v3
+              with:
+                  name: pipeline
+
+            - name: Make pipeline executable
+              run: |
+                  chmod +x pipeline-dagger
+
+            - name: Plan rotation config
+              run: |
+                  ./pipeline-dagger infra --component=rotation --plan
+
+            - name: Deploy rotation config
+              run: |
+                  ./pipeline-dagger infra --component=rotation --deploy
