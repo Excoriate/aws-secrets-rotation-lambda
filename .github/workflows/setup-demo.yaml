@@ -176,6 +176,6 @@ jobs:
 
             - name: Deploy into S3
               run: |
-                  ./pipeline-dagger lambda --upload-to-s3 --s3-bucket=${{TF_VAR_environment}}-${{TF_VAR_aws_region}}-secrets-manager-rotator-deployments-${{TF_VAR_rotator_lambda_name}} \
+                  ./pipeline-dagger lambda --upload-to-s3 --s3-bucket=${{env.TF_VAR_environment}}-${{env.TF_VAR_aws_region}}-secrets-manager-rotator-deployments-${{env.TF_VAR_rotator_lambda_name}} \
                     --s3-destination-path=releases \
                     --s3-file-to-upload=secrets-manager-rotator-lambda.zip
