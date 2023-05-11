@@ -81,16 +81,13 @@ jobs:
               with:
                   name: compiled-rotator
 
-            - name: Move Binaries to root
-              # It's required to consider that the (named) artifacts are created in their own directories.
-              run: |
-                    mv pipeline/pipeline-dagger .
-                    mv compiled-rotator/output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda .
-                    chmod +x pipeline-dagger
-
             - name: Current files in WorkDir
               run: ls -ltrah
 
+            - name: Make pipeline executable
+              run: |
+                  chmod +x pipeline-dagger
+
             - name: Generate Zip
               run: |
-                  ./pipeline-dagger lambda --package-zip --existing-binary=output/lambda-bin/linux/amd64/secrets-manager-rotator-lambda
+                  ./pipeline-dagger lambda --package-zip --existing-binary=secrets-manager-rotator-lambda
