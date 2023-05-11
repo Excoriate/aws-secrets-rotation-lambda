@@ -55,7 +55,7 @@ func GetInfraWorkDirPath(module string) string {
 		path = fmt.Sprintf("%s/%s", infraBaseDir, "lambda-deployment-bucket")
 	}
 
-	if module == "function" {
+	if module == "lambda" {
 		path = fmt.Sprintf("%s/%s", infraBaseDir, "lambda-function")
 	}
 
