@@ -17,6 +17,21 @@ env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_REGION: us-east-1
+    # Specific implementation configuration.
+    TF_STATE_BUCKET_REGION: "eu-central-1"
+    TF_STATE_BUCKET: "platform-tfstate-account-sandbox"
+    TF_STATE_LOCK_TABLE: "platform-tfstate-account-sandbox"
+    TF_REGISTRY_GITHUB_ORG: "Excoriate"
+    TF_REGISTRY_BASE_URL: "git::https://github.com"
+    TF_VAR_aws_region: "us-east-1"
+    TF_VAR_environment: "dev"
+    TF_VAR_rotator_lambda_name: "demo"
+    # The /dev/ part of the below secret path should be concise with the TF_VAR_environment variable.
+    TF_VAR_secret_name: "/dev/us-east-1/secrets-manager-rotator-demo/my-demo-secret-to-rotate-1"
+    TF_VAR_rotation_schedule: "cron(0 7/4 * * ? *)"
+    TF_VAR_rotation_lambda_enabled: true
+    TF_VERSION: "v1.4.6"
+    TG_VERSION: "v0.42.8"
 
 jobs:
     rotator-ci:
