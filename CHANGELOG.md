@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/Excoriate/aws-secrets-rotation-lambda/compare/v0.0.3...v0.0.4) (2023-05-12)
+
+
+### Other
+
+* add status badges fixed ([da3afe5](https://github.com/Excoriate/aws-secrets-rotation-lambda/commit/da3afe584a02ed95b20c6fe346b92d21a2523898))
+
 ## [0.0.3](https://github.com/Excoriate/aws-secrets-rotation-lambda/compare/v0.0.2...v0.0.3) (2023-05-11)
 
 
