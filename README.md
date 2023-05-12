@@ -4,7 +4,7 @@
 <p align="center">Simple, and <b>fully-automated</b> AWS Lambda (Secret 🔑) rotator! <b> function, that works on top of very nice things! ❤️️</b>.<br/><br/>
 
 ---
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/Excoriate/Stiletto) [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![Powered By: GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=flat-square)](https://github.com/goreleaser)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md) [![Powered By: GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=flat-square)](https://github.com/goreleaser)[![Setup Demo Config](https://github.com/Excoriate/aws-secrets-rotation-lambda/actions/workflows/setup-demo.yaml/badge.svg)](https://github.com/Excoriate/aws-secrets-rotation-lambda/actions/workflows/setup-demo.yaml)[![release](https://github.com/Excoriate/aws-secrets-rotation-lambda/actions/workflows/release.yaml/badge.svg)](https://github.com/Excoriate/aws-secrets-rotation-lambda/actions/workflows/release.yaml)
 
 
 ---
